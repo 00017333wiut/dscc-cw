@@ -1,0 +1,9 @@
+<h1>{{ post.title }}</h1>
+<p>By {{ post.author }}</p>
+<p>{{ post.content }}</p>
+
+<p>Category:
+    <a href="{% url 'category_posts' post.category.pk %}">
+        {{ post.category.name }}
+    </a>
+</p>

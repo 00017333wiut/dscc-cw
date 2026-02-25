@@ -24,7 +24,7 @@ def category_posts(request, pk):
         {"category": category, "posts": posts}
     )
 
-#CRUD
+# CRUD
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     fields = ["title", "content", "category", "tags", "published"]

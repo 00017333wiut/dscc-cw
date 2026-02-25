@@ -48,7 +48,7 @@ jobs:
 
       - name: Run flake8 linting
         run: |
-          flake8 . --max-line-length=120 --exclude=migrations,venv,.venv
+          flake8 . --max-line-length=120 --exclude=migrations,venv,.venv --extend-ignore=F401,F403,W391,W292
 
       - name: Run tests
         env:

@@ -58,7 +58,8 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          DJANGO_SECRET_KEY: test-secret-key-for-ci-only
+          SECRET_KEY: test-secret-key-for-ci-only-not-real
+          DJANGO_SECRET_KEY: test-secret-key-for-ci-only-not-real
         run: |
           python manage.py test
 

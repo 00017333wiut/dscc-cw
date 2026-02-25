@@ -1,0 +1,128 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/dscc-blog
+
+jobs:
+  # ============================================
+  # JOB 1: CODE QUALITY + TESTS
+  # ============================================
+  test:
+    name: Run Tests & Linting
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run flake8 linting
+        run: |
+          flake8 . --max-line-length=120 --exclude=migrations,venv,.venv
+
+      - name: Run tests
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.development
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          DJANGO_SECRET_KEY: test-secret-key-for-ci-only
+        run: |
+          python manage.py test
+
+  # ============================================
+  # JOB 2: BUILD & PUSH DOCKER IMAGE
+  # ============================================
+  build:
+    name: Build & Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+
+  # ============================================
+  # JOB 3: DEPLOY TO SERVER
+  # ============================================
+  deploy:
+    name: Deploy to Server
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/dscc-cw
+
+            # Pull latest code
+            git pull origin main
+
+            # Pull latest Docker image
+            docker compose pull web
+
+            # Restart with zero downtime
+            docker compose up -d --no-deps web
+
+            # Run migrations automatically
+            docker compose exec -T web python manage.py migrate
+
+            # Clean up old images
+            docker image prune -f
+
+            echo "Deployment completed successfully!"

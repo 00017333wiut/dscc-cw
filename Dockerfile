@@ -1,11 +1,11 @@
 # Stage 1: Builder
-FROM python:3.13-slim AS builder
+FROM python:3.13-alpine AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    gcc musl-dev postgresql-dev
+
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -22,9 +22,8 @@ RUN groupadd --gid 1000 appgroup && \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 netcat-openbsd \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    postgresql-libs netcat-openbsd
 
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"

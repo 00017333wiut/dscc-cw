@@ -3,9 +3,7 @@ FROM python:3.13-alpine AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache \
-    gcc musl-dev postgresql-dev
-
+RUN apk add --no-cache gcc musl-dev postgresql-dev
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -16,14 +14,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Production
 FROM python:3.13-slim AS production
 
-# Create user FIRST before anything else
 RUN groupadd --gid 1000 appgroup && \
     useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
 
 WORKDIR /app
 
-RUN apk add --no-cache \
-    postgresql-libs netcat-openbsd
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"

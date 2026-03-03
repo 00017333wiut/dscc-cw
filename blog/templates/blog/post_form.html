@@ -18,40 +18,7 @@
     <button type="submit">Save</button>
 </form>
 
-<hr>
-<h3>Add a new category</h3>
-<input type="text" id="new-category-name" placeholder="Category name">
-<button onclick="createCategory()">Add Category</button>
-<span id="category-msg"></span>
-
-<script>
-function createCategory() {
-    const name = document.getElementById('new-category-name').value;
-    if (!name) return;
-
-    fetch('/category/new/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: 'name=' + encodeURIComponent(name)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.id) {
-            // Add new option to the category dropdown
-            const select = document.querySelector('select[name="category"]');
-            const option = new Option(data.name, data.id);
-            select.add(option);
-            select.value = data.id;
-            document.getElementById('new-category-name').value = '';
-            document.getElementById('category-msg').textContent =
-                'Category "' + data.name + '" created!';
-        }
-    });
-}
-</script>
+<a href="/">← Cancel</a>
 
 </body>
 </html>

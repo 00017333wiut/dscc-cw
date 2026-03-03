@@ -28,13 +28,13 @@ def category_posts(request, pk):
         "blog/category_posts.html",
         {"category": category, "posts": posts}
     )
-def category_create(request):
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        if name:
-            category = Category.objects.create(name=name)
-            return JsonResponse({'id': category.pk, 'name': category.name})
-    return JsonResponse({'error': 'Invalid request'}, status=400)
+# def category_create(request):
+#     if request.method == 'POST':
+#         name = request.POST.get('name')
+#         if name:
+#             category = Category.objects.create(name=name)
+#             return JsonResponse({'id': category.pk, 'name': category.name})
+#     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 # CRUD
 class PostCreateView(LoginRequiredMixin, CreateView):

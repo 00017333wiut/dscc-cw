@@ -2,9 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>{{ category.name }} - Posts</title>
 </head>
 <body>
+
+<nav>
+    <a href="/">Home</a> |
+    {% if user.is_authenticated %}
+        <a href="{% url 'post_create' %}">New Post</a> |
+        <form method="post" action="/accounts/logout/" style="display:inline">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    {% else %}
+        <a href="/accounts/login/">Login</a>
+    {% endif %}
+</nav>
+
+<h1>Posts in: {{ category.name }}</h1>
+
+{% if posts %}
+    {% for post in posts %}
+        <div>
+            <h2><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h2>
+            <p>By {{ post.author }} | {{ post.created_at|date:"d M Y" }}</p>
+            {% if request.user == post.author %}
+                <a href="{% url 'post_update' post.pk %}">Edit</a> |
+                <a href="{% url 'post_delete' post.pk %}">Delete</a>
+            {% endif %}
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No posts in this category yet.</p>
+{% endif %}
+
+<a href="/">← Back to all posts</a>
 
 </body>
 </html>

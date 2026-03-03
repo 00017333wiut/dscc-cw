@@ -1,13 +1,18 @@
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import CreateView, UpdateView, DeleteView
-from .models import Post, Category
+from .models import Post, Category, Tag
 
 
 def post_list(request):
     posts = Post.objects.filter(published=True)
-    return render(request, "blog/post_list.html", {"posts": posts})
+    categories = Category.objects.all()
+    return render(request, "blog/post_list.html", {
+        "posts": posts,
+        "categories": categories
+    })
 
 
 def post_detail(request, pk):
@@ -23,6 +28,13 @@ def category_posts(request, pk):
         "blog/category_posts.html",
         {"category": category, "posts": posts}
     )
+def category_create(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            category = Category.objects.create(name=name)
+            return JsonResponse({'id': category.pk, 'name': category.name})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 # CRUD
 class PostCreateView(LoginRequiredMixin, CreateView):

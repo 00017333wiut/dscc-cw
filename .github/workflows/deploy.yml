@@ -114,14 +114,20 @@ jobs:
             # Pull latest code
             git pull origin main
 
-            # Pull latest Docker image
+            # Pull latest Docker image from Hub
             docker compose pull web
 
-            # Restart with zero downtime
-            docker compose up -d --no-deps web
+            # Stop old containers
+            docker compose down
+
+            # Start all containers fresh (prevents stale nginx connections)
+            docker compose up -d
 
             # Run migrations automatically
             docker compose exec -T web python manage.py migrate
+
+            # Collect static files
+            docker compose exec -T web python manage.py collectstatic --noinput
 
             # Clean up old images
             docker image prune -f
